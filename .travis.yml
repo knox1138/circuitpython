@@ -46,5 +46,6 @@ before_install:
 
 script:
   - cd ${TRAVIS_BUILD_DIR}
+  - make -C mpy-cross
   - make -C esp8266 axtls
   - make -C esp8266
