@@ -23,9 +23,6 @@ for board in $boards; do
     elif [ $board == "feather52832" ]; then
         make $PARALLEL -C ports/nrf BOARD=feather52832
         (( exit_status = exit_status || $? ))
-    elif [ $board == "pca10056" ]; then
-        make $PARALLEL -C ports/nrf BOARD=pca10056 SD=s140
-        (( exit_status = exit_status || $? ))
     else
         make $PARALLEL -C ports/atmel-samd BOARD=$board
         (( exit_status = exit_status || $? ))
