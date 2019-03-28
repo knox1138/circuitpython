@@ -12,10 +12,22 @@ jobs:
       vmImage: 'Ubuntu-16.04'
     strategy:
         matrix:
-            trinket_m0:
-                TRAVIS_BOARDS: 'trinket_m0'
-            feather_m0_express:
-                TRAVIS_BOARDS: 'feather_m0_express'
+            adafruit_samd_m0_boards:
+                TRAVIS_BOARDS: 'trinket_m0 pirkey_m0 gemma_m0'
+            samd_m0_boards:
+                TRAVIS_BOARDS: 'sparkfun_lumidrive meowmeow uchip arduino_zero arduino_mkr1300 arduino_mkrzero pewpew10  sparkfun_samd21_mini sparkfun_samd21_dev catwan_usbstick'
+            feather_samd_m0_boards:
+                TRAVIS_BOARDS: 'feather_radiofruit_zigbee feather_m0_rfm69 feather_m0_rfm9x feather_m0_adalogger feather_m0_basic'
+            samd_m0_express_boards:
+                TRAVIS_BOARDS: 'circuitplayground_express_crickit circuitplayground_express metro_m0_express sparkfun_redboard_turbo hallowing_m0_express itsybitsy_m0_express feather_m0_express_crickit feather_m0_express'
+            nrf_boards:
+                TRAVIS_BOARDS: 'pca10056 pca10059 makerdiary_nrf52840_mdk makerdiary_nrf52840_mdk_usb_dongle particle_boron particle_argon particle_xenon sparkfun_nrf52840_mini'
+            nrf_express_boards:
+                TRAVIS_BOARDS: 'feather_nrf52840_express'
+            samd_m4_boards:
+                TRAVIS_BOARDS: 'mini_sam_m4'
+            samd_m4_express_boards:
+                TRAVIS_BOARDS: 'grandcentral_m4_express metro_m4_express  trellis_m4_express pybadge sam32 itsybitsy_m4_express feather_m4_express pyportal'
 
     steps:
     - checkout: self
@@ -43,67 +55,47 @@ jobs:
         python3 -u build_release_files.py
       displayName: 'Build board'
       workingDirectory: 'tools'
+- job: Test
+  pool:
+    vmImage: 'Ubuntu-16.04'
+  steps:
+  - checkout: self
+    submodules: recursive
+  # - bash: |
+  #     wget https://s3.amazonaws.com/adafruit-circuit-python/gcc-arm-embedded_7-2018q2-1~xenial1_amd64.deb
+  #     sudo dpkg -i gcc-arm-embedded*_amd64.deb
+  #   displayName: 'Install ARM GCC'
+  - bash: |
+      sudo apt-get install gettext
+    displayName: 'Install native deps'
+  - bash: |
+      sudo apt-get install -y python3-pip
+      pip3 install --user sh click Sphinx sphinx-rtd-theme recommonmark polib
+      pip3 install --upgrade --user cpp-coveralls
+    displayName: 'Install python deps'
+  - bash: |
+      gcc --version
+      arm-none-eabi-gcc --version
+      python3 --version
+    displayName: 'Print versions'
+  - bash: |
+      make -C mpy-cross -j2
+    displayName: 'Build mpy-cross'
+  - bash: |
+      make -C ports/unix deplibs -j2
+      make -C ports/unix -j2
+      make -C ports/unix coverage -j2
+    displayName: 'Build unix'
+    workingDirectory: 'tools'
+  - bash: |
+      MICROPY_CPYTHON3=python3.5 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests -j1
+    displayName: 'Test all'
+    workingDirectory: 'tests'
+  - bash: |
+      MICROPY_CPYTHON3=python3.5 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests -j1 -d thread
+    displayName: 'Test threads'
+    workingDirectory: 'tests'
 
-#   # Use unbuffered output because building all the releases can take a long time.
-#   # Travis will cancel the job if it sees no output for >10 minutes.
-#   - cd tools &&
-#   - cd ..
-
-# before_script:
-#   # Expand the git tree back to 4.0.0-alpha.1 and then fetch the latest tag.
-#   - LAST_TAG=`git ls-remote --quiet --tags --sort=version:refname | egrep -o "refs/tags/[0-9]+.*\$" | tail -n 1`
-#   - git fetch --depth 1 origin $LAST_TAG:$LAST_TAG
-#   - git describe --dirty --always --tags
-#   - function var_search () { case "$1" in *$2*) true;; *) false;; esac; }
-#   - sudo dpkg --add-architecture i386
-#
-#
-#   - (! var_search "${TRAVIS_SDK-}" arm || ())
-#
-#   # For huzzah builds
-#   - (! var_search "${TRAVIS_SDK-}" esp8266 || (wget https://github.com/jepler/esp-open-sdk/releases/download/2018-06-10/xtensa-lx106-elf-standalone.tar.gz && tar -C .. -xaf xtensa-lx106-elf-standalone.tar.gz))
-#   - if var_search "${TRAVIS_SDK-}" esp8266 ; then PATH=$(readlink -f ../xtensa-lx106-elf/bin):$PATH; fi
-#
-#   # For coverage testing (upgrade is used to get latest urllib3 version)
-#   - sudo apt-get install -y python3-pip
-#   - pip3 install --user sh click
-#   - ([[ -z "$TRAVIS_TESTS" ]] || sudo pip install --upgrade cpp-coveralls)
-#   - (! var_search "${TRAVIS_TESTS-}" docs || pip install --user Sphinx sphinx-rtd-theme recommonmark)
-#   - (! var_search "${TRAVIS_TESTS-}" translations || pip3 install --user polib)
-#
-#   # report some good version numbers to the build
-#   - gcc --version
-#   - (! var_search "${TRAVIS_SDK-}" arm || arm-none-eabi-gcc --version)
-#   - (! var_search "${TRAVIS_SDK-}" esp8266 || xtensa-lx106-elf-gcc --version)
-#   - python3 --version
-#
-# script:
-#   # Build mpy-cross first because other builds depend on it.
-#   - echo 'Building mpy-cross' && echo 'travis_fold:start:mpy-cross'
-#   - make -C mpy-cross -j2 ; S=$? ; echo $S > status ; (exit $S)
-#   - echo 'travis_fold:end:mpy-cross' && tools/print_status.py status
-#
-#   # Use unbuffered output because building all the releases can take a long time.
-#   # Travis will cancel the job if it sees no output for >10 minutes.
-#   - cd tools && python3 -u build_release_files.py
-#   - cd ..
-#
-#   - echo 'Building unix' && echo 'travis_fold:start:unix'
-#   - (! var_search "${TRAVIS_TESTS-}" unix || (make -C ports/unix deplibs -j2 && make -C ports/unix -j2 && make -C ports/unix coverage -j2)) ; S=$? ; echo $S > status ; (exit $S)
-#   - echo 'travis_fold:end:unix' && tools/print_status.py status
-#
-#   # run tests without coverage info
-#   #- (cd tests && MICROPY_CPYTHON3=python3.4 ./run-tests -j1)
-#   #- (cd tests && MICROPY_CPYTHON3=python3.4 ./run-tests -j1 --emit native)
-#
-#   # run tests with coverage info
-#   - echo 'Test all' && echo 'travis_fold:start:test_all'
-#   - (! var_search "${TRAVIS_TESTS-}" unix || (cd tests && MICROPY_CPYTHON3=python3.5 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests -j1)) ; S=$? ; echo $S > status ; (exit $S)
-#   - echo 'travis_fold:end:test_all' && tools/print_status.py status
-#
-#   - echo 'Test threads' && echo 'travis_fold:start:test_threads'
-#   - (! var_search "${TRAVIS_TESTS-}" unix || (cd tests && MICROPY_CPYTHON3=python3.5 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests -j1 -d thread)) ; S=$? ; echo $S > status ; (exit $S)
-#   - echo 'travis_fold:end:test_threads' && tools/print_status.py status
 #
 #   - echo 'Testing with native' && echo 'travis_fold:start:test_native'
 #   - (! var_search "${TRAVIS_TESTS-}" unix || (cd tests && MICROPY_CPYTHON3=python3.5 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests -j1 --emit native)) ; S=$? ; echo $S > status ; (exit $S)
