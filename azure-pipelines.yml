@@ -7,7 +7,7 @@ trigger:
 - azure-pipelines
 
 jobs:
--   job: Build ARM
+-   job: BuildARM
     pool:
       vmImage: 'Ubuntu-16.04'
     strategy:
