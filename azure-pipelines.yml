@@ -26,7 +26,11 @@ jobs:
       displayName: 'Install ARM GCC'
     - bash: |
         sudo apt-get install gettext
-      displayName: 'Install deps'
+      displayName: 'Install native deps'
+    - bash: |
+        sudo apt-get install -y python3-pip
+        pip3 install --user sh click
+      displayName: 'Install python deps'
     - bash: |
         gcc --version
         arm-none-eabi-gcc --version
