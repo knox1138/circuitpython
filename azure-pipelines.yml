@@ -11,6 +11,7 @@ jobs:
   pool:
    vmImage: 'Ubuntu-16.04'
   steps:
+  - checkout: none
   - bash: |
       wget https://s3.amazonaws.com/adafruit-circuit-python/gcc-arm-embedded_7-2018q2-1~xenial1_amd64.deb
     displayName: 'Download ARM GCC from S3'
@@ -28,15 +29,10 @@ jobs:
     inputs:
       versionSpec: '3.5'
       architecture: 'x64'
-  - script: python -m pip install --upgrade pip setuptools wheel
-    displayName: 'Install tools'
   - bash: |
-      sudo apt-get install gettext
-    displayName: 'Install native deps'
-  - bash: |
-      sudo apt-get install -y python3-pip python3-setuptools
-      pip3 install --user sh click Sphinx sphinx-rtd-theme recommonmark polib wheel
-      pip3 install --upgrade --user cpp-coveralls
+      python -m pip install --upgrade pip setuptools wheel
+      python -m pip install sh click Sphinx sphinx-rtd-theme recommonmark polib wheel
+      python -m pip install --upgrade cpp-coveralls
     displayName: 'Install python deps'
   - bash: |
       gcc --version
@@ -48,6 +44,9 @@ jobs:
   - bash: |
       make check-translate
     displayName: 'Checking translations'
+  - bash: |
+      sudo apt-get install gettext
+    displayName: 'Install native deps'
   - bash: |
      make -C mpy-cross -j2
     displayName: 'Build mpy-cross'
