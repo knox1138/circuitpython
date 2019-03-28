@@ -18,19 +18,30 @@ jobs:
                 TRAVIS_BOARDS: 'feather_m0_express'
 
     steps:
-    - script: |
+    - checkout: self
+      fetchDepth: 6
+      submodules: recursive
+    - bash: |
+        LAST_TAG=`git ls-remote --quiet --tags --sort=version:refname | egrep -o "refs/tags/[0-9]+.*\$" | tail -n 1`
+        git fetch --depth 1 origin $LAST_TAG:$LAST_TAG
+        git describe --dirty --always --tags
+      displayName: 'Expand git history'
+    - bash: |
         wget https://s3.amazonaws.com/adafruit-circuit-python/gcc-arm-embedded_7-2018q2-1~xenial1_amd64.deb
         sudo dpkg -i gcc-arm-embedded*_amd64.deb
-      displayName: 'Install GCC'
-    - script: |
+      displayName: 'Install ARM GCC'
+    - bash: |
+        sudo apt-get install gettext
+      displayName: 'Install deps'
+    - bash: |
         gcc --version
         arm-none-eabi-gcc --version
         python3 --version
       displayName: 'Print versions'
-    - script: |
+    - bash: |
         make -C mpy-cross -j2
       displayName: 'Build mpy-cross'
-    - script: |
+    - bash: |
         python3 -u build_release_files.py
       displayName: 'Build board'
       workingDirectory: 'tools'
