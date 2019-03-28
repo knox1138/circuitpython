@@ -7,16 +7,22 @@ trigger:
 - azure-pipelines
 
 jobs:
+- job: Download_ARM_GCC
+  pool:
+   vmImage: 'Ubuntu-16.04'
+  steps:
+  - bash: |
+    wget https://s3.amazonaws.com/adafruit-circuit-python/gcc-arm-embedded_7-2018q2-1~xenial1_amd64.deb
+  - task: PublishPipelineArtifact@0
+    inputs:
+      artifactName: 'arm-gcc.deb'
+      targetPath: 'gcc-arm-embedded_7-2018q2-1~xenial1_amd64.deb'
 - job: Test
   pool:
    vmImage: 'Ubuntu-16.04'
   steps:
   - checkout: self
     submodules: recursive
-  # - bash: |
-  #     wget https://s3.amazonaws.com/adafruit-circuit-python/gcc-arm-embedded_7-2018q2-1~xenial1_amd64.deb
-  #     sudo dpkg -i gcc-arm-embedded*_amd64.deb
-  #   displayName: 'Install ARM GCC'
   - bash: |
       sudo apt-get install gettext
     displayName: 'Install native deps'
@@ -31,6 +37,12 @@ jobs:
       python3 --version
     displayName: 'Print versions'
   - bash: |
+      sphinx-build -E -W -b html . _build/html
+    displayName: 'Building docs'
+  - bash: |
+      make check-translate
+    displayName: 'Checking translations'
+  - bash: |
      make -C mpy-cross -j2
     displayName: 'Build mpy-cross'
   - bash: |
@@ -43,13 +55,35 @@ jobs:
       MICROPY_CPYTHON3=python3.5 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests -j1
     displayName: 'Test all'
     workingDirectory: 'tests'
+    continueOnError: true
   - bash: |
       MICROPY_CPYTHON3=python3.5 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests -j1 -d thread
     displayName: 'Test threads'
     workingDirectory: 'tests'
+    continueOnError: true
+  - bash: |
+      MICROPY_CPYTHON3=python3.5 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests -j1 --emit native
+    displayName: 'Testing with native'
+    workingDirectory: 'tests'
+    continueOnError: true
+  - bash: |
+      MICROPY_CPYTHON3=python3.5 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests -j1 --via-mpy -d basics float
+    displayName: 'Testing with mpy'
+    workingDirectory: 'tests'
+    continueOnError: true
+  - bash: |
+      for exp in *.exp;
+      do testbase=$(basename $exp .exp)
+      echo -e "\nFAILURE $testbase"
+      diff -u $testbase.exp $testbase.out
+      done
+    workingDirectory: 'tests'
+    condition: failed()
+
 -   job: BuildARM
     pool:
       vmImage: 'Ubuntu-16.04'
+    dependsOn: Download_ARM_GCC
     strategy:
         matrix:
             adafruit_samd_m0_boards:
@@ -80,9 +114,13 @@ jobs:
     steps:
     - checkout: self
       submodules: recursive
+    - task: DownloadPipelineArtifact@0
+      inputs:
+        artifactName: 'arm-gcc.deb'
+        targetPath: $(System.DefaultWorkingDirectory)
+      displayName: 'Download ARM GCC from pipeline'
     - bash: |
-        wget https://s3.amazonaws.com/adafruit-circuit-python/gcc-arm-embedded_7-2018q2-1~xenial1_amd64.deb
-        sudo dpkg -i gcc-arm-embedded*_amd64.deb
+        sudo dpkg -i arm-gcc.deb
       displayName: 'Install ARM GCC'
     - bash: |
         sudo apt-get install gettext
@@ -103,28 +141,3 @@ jobs:
         python3 -u build_release_files.py
       displayName: 'Build board'
       workingDirectory: 'tools'
-
-#
-#   - echo 'Testing with native' && echo 'travis_fold:start:test_native'
-#   - (! var_search "${TRAVIS_TESTS-}" unix || (cd tests && MICROPY_CPYTHON3=python3.5 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests -j1 --emit native)) ; S=$? ; echo $S > status ; (exit $S)
-#   - echo 'travis_fold:end:test_native' && tools/print_status.py status
-#
-#   - (echo 'Testing with mpy' && echo 'travis_fold:start:test_mpy')
-#   - (! var_search "${TRAVIS_TESTS-}" unix || (cd tests && MICROPY_CPYTHON3=python3.5 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests -j1 --via-mpy -d basics float)) ; S=$? ; echo $S > status ; (exit $S)
-#   - echo 'travis_fold:end:test_mpy' && tools/print_status.py status
-#
-#   - (echo 'Building docs' && echo 'travis_fold:start:build_docs')
-#   - (! var_search "${TRAVIS_TESTS-}" docs || sphinx-build -E -W -b html . _build/html) ; S=$? ; echo $S > status ; (exit $S)
-#   - echo 'travis_fold:end:build_docs' && tools/print_status.py status
-#
-#   - (echo 'Building translations' && echo 'travis_fold:start:build_translations')
-#   - (! var_search "${TRAVIS_TESTS-}" translations || make check-translate) ; S=$? ; echo $S > status ; (exit $S)
-#   - echo 'travis_fold:end:build_translations' && tools/print_status.py status
-#
-#   # run coveralls coverage analysis (try to, even if some builds/tests failed)
-#   #- (cd ports/unix && coveralls --root ../.. --build-root . --gcov $(which gcov) --gcov-options '\-o build-coverage/' --include py --include extmod)
-#
-#   - (! var_search "${TRAVIS_TESTS-}" website || (cd tools && python3 build_board_info.py && cd ..))
-#
-# after_failure:
-#   - (cd tests && for exp in *.exp; do testbase=$(basename $exp .exp); echo -e "\nFAILURE $testbase"; diff -u $testbase.exp $testbase.out; done)
