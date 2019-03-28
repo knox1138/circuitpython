@@ -19,13 +19,7 @@ jobs:
 
     steps:
     - checkout: self
-      fetchDepth: 6
       submodules: recursive
-    - bash: |
-        LAST_TAG=`git ls-remote --quiet --tags --sort=version:refname | egrep -o "refs/tags/[0-9]+.*\$" | tail -n 1`
-        git fetch --depth 1 origin $LAST_TAG:$LAST_TAG
-        git describe --dirty --always --tags
-      displayName: 'Expand git history'
     - bash: |
         wget https://s3.amazonaws.com/adafruit-circuit-python/gcc-arm-embedded_7-2018q2-1~xenial1_amd64.deb
         sudo dpkg -i gcc-arm-embedded*_amd64.deb
