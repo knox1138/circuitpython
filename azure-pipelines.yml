@@ -7,6 +7,46 @@ trigger:
 - azure-pipelines
 
 jobs:
+- job: Test
+  pool:
+   vmImage: 'Ubuntu-16.04'
+  steps:
+  - checkout: self
+    submodules: recursive
+  # - bash: |
+  #     wget https://s3.amazonaws.com/adafruit-circuit-python/gcc-arm-embedded_7-2018q2-1~xenial1_amd64.deb
+  #     sudo dpkg -i gcc-arm-embedded*_amd64.deb
+  #   displayName: 'Install ARM GCC'
+  - bash: |
+      sudo apt-get install gettext
+    displayName: 'Install native deps'
+  - bash: |
+      sudo apt-get install -y python3-pip python3-setuptools
+      pip3 install --user sh click Sphinx sphinx-rtd-theme recommonmark polib
+      pip3 install --upgrade --user cpp-coveralls
+    displayName: 'Install python deps'
+  - bash: |
+      gcc --version
+      arm-none-eabi-gcc --version
+      python3 --version
+    displayName: 'Print versions'
+  - bash: |
+     make -C mpy-cross -j2
+    displayName: 'Build mpy-cross'
+  - bash: |
+      make -C ports/unix deplibs -j2
+      make -C ports/unix -j2
+      make -C ports/unix coverage -j2
+    displayName: 'Build unix'
+    workingDirectory: 'tools'
+  - bash: |
+      MICROPY_CPYTHON3=python3.5 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests -j1
+    displayName: 'Test all'
+    workingDirectory: 'tests'
+  - bash: |
+      MICROPY_CPYTHON3=python3.5 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests -j1 -d thread
+    displayName: 'Test threads'
+    workingDirectory: 'tests'
 -   job: BuildARM
     pool:
       vmImage: 'Ubuntu-16.04'
@@ -14,20 +54,28 @@ jobs:
         matrix:
             adafruit_samd_m0_boards:
                 TRAVIS_BOARDS: 'trinket_m0 pirkey_m0 gemma_m0'
-            samd_m0_boards:
-                TRAVIS_BOARDS: 'sparkfun_lumidrive meowmeow uchip arduino_zero arduino_mkr1300 arduino_mkrzero pewpew10  sparkfun_samd21_mini sparkfun_samd21_dev catwan_usbstick'
+            sparkfun_samd_m0_boards:
+                TRAVIS_BOARDS: 'sparkfun_lumidrive sparkfun_samd21_mini sparkfun_samd21_dev'
+            arduino_samd_m0_boards:
+                TRAVIS_BOARDS: 'arduino_zero arduino_mkr1300 arduino_mkrzero'
+            other_samd_m0_boards:
+                TRAVIS_BOARDS: 'meowmeow uchip pewpew10 catwan_usbstick'
             feather_samd_m0_boards:
                 TRAVIS_BOARDS: 'feather_radiofruit_zigbee feather_m0_rfm69 feather_m0_rfm9x feather_m0_adalogger feather_m0_basic'
-            samd_m0_express_boards:
-                TRAVIS_BOARDS: 'circuitplayground_express_crickit circuitplayground_express metro_m0_express sparkfun_redboard_turbo hallowing_m0_express itsybitsy_m0_express feather_m0_express_crickit feather_m0_express'
+            samd_m0_express_boards1:
+                TRAVIS_BOARDS: 'circuitplayground_express_crickit circuitplayground_express feather_m0_express_crickit feather_m0_express'
+            samd_m0_express_boards2:
+                TRAVIS_BOARDS: 'metro_m0_express sparkfun_redboard_turbo hallowing_m0_express itsybitsy_m0_express'
             nrf_boards:
                 TRAVIS_BOARDS: 'pca10056 pca10059 makerdiary_nrf52840_mdk makerdiary_nrf52840_mdk_usb_dongle particle_boron particle_argon particle_xenon sparkfun_nrf52840_mini'
             nrf_express_boards:
                 TRAVIS_BOARDS: 'feather_nrf52840_express'
             samd_m4_boards:
                 TRAVIS_BOARDS: 'mini_sam_m4'
-            samd_m4_express_boards:
-                TRAVIS_BOARDS: 'grandcentral_m4_express metro_m4_express  trellis_m4_express pybadge sam32 itsybitsy_m4_express feather_m4_express pyportal'
+            samd_m4_express_boards1:
+                TRAVIS_BOARDS: 'sam32 itsybitsy_m4_express feather_m4_express pyportal'
+            samd_m4_express_boards2:
+                TRAVIS_BOARDS: 'grandcentral_m4_express metro_m4_express trellis_m4_express pybadge'
 
     steps:
     - checkout: self
@@ -55,46 +103,6 @@ jobs:
         python3 -u build_release_files.py
       displayName: 'Build board'
       workingDirectory: 'tools'
-- job: Test
-  pool:
-    vmImage: 'Ubuntu-16.04'
-  steps:
-  - checkout: self
-    submodules: recursive
-  # - bash: |
-  #     wget https://s3.amazonaws.com/adafruit-circuit-python/gcc-arm-embedded_7-2018q2-1~xenial1_amd64.deb
-  #     sudo dpkg -i gcc-arm-embedded*_amd64.deb
-  #   displayName: 'Install ARM GCC'
-  - bash: |
-      sudo apt-get install gettext
-    displayName: 'Install native deps'
-  - bash: |
-      sudo apt-get install -y python3-pip
-      pip3 install --user sh click Sphinx sphinx-rtd-theme recommonmark polib
-      pip3 install --upgrade --user cpp-coveralls
-    displayName: 'Install python deps'
-  - bash: |
-      gcc --version
-      arm-none-eabi-gcc --version
-      python3 --version
-    displayName: 'Print versions'
-  - bash: |
-      make -C mpy-cross -j2
-    displayName: 'Build mpy-cross'
-  - bash: |
-      make -C ports/unix deplibs -j2
-      make -C ports/unix -j2
-      make -C ports/unix coverage -j2
-    displayName: 'Build unix'
-    workingDirectory: 'tools'
-  - bash: |
-      MICROPY_CPYTHON3=python3.5 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests -j1
-    displayName: 'Test all'
-    workingDirectory: 'tests'
-  - bash: |
-      MICROPY_CPYTHON3=python3.5 MICROPY_MICROPYTHON=../ports/unix/micropython_coverage ./run-tests -j1 -d thread
-    displayName: 'Test threads'
-    workingDirectory: 'tests'
 
 #
 #   - echo 'Testing with native' && echo 'travis_fold:start:test_native'
