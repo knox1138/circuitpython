@@ -24,6 +24,12 @@ jobs:
   steps:
   - checkout: self
     submodules: recursive
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.5'
+      architecture: 'x64'
+  - script: python -m pip install --upgrade pip setuptools wheel
+    displayName: 'Install tools'
   - bash: |
       sudo apt-get install gettext
     displayName: 'Install native deps'
@@ -34,7 +40,6 @@ jobs:
     displayName: 'Install python deps'
   - bash: |
       gcc --version
-      arm-none-eabi-gcc --version
       python3 --version
     displayName: 'Print versions'
   - bash: |
@@ -78,8 +83,11 @@ jobs:
       echo -e "\nFAILURE $testbase"
       diff -u $testbase.exp $testbase.out
       done
+    displayName: "Dump test failure info"
     workingDirectory: 'tests'
     condition: failed()
+    failOnStderr: false
+    continueOnError: true
 
 -   job: BuildARM
     pool:
