@@ -16,7 +16,7 @@ jobs:
     displayName: 'Download ARM GCC from S3'
   - task: PublishPipelineArtifact@0
     inputs:
-      artifactName: 'arm-gcc.deb'
+      artifactName: 'arm-gcc'
       targetPath: 'gcc-arm-embedded_7-2018q2-1~xenial1_amd64.deb'
 - job: Test
   pool:
@@ -117,11 +117,11 @@ jobs:
       submodules: recursive
     - task: DownloadPipelineArtifact@0
       inputs:
-        artifactName: 'arm-gcc.deb'
+        artifactName: 'arm-gcc'
         targetPath: $(System.DefaultWorkingDirectory)
       displayName: 'Download ARM GCC from pipeline'
     - bash: |
-        sudo dpkg -i arm-gcc.deb
+        sudo dpkg -i arm-gcc/*.deb
       displayName: 'Install ARM GCC'
     - bash: |
         sudo apt-get install gettext
