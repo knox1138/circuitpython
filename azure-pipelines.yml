@@ -12,7 +12,8 @@ jobs:
    vmImage: 'Ubuntu-16.04'
   steps:
   - bash: |
-    wget https://s3.amazonaws.com/adafruit-circuit-python/gcc-arm-embedded_7-2018q2-1~xenial1_amd64.deb
+      wget https://s3.amazonaws.com/adafruit-circuit-python/gcc-arm-embedded_7-2018q2-1~xenial1_amd64.deb
+    displayName: 'Download ARM GCC from S3'
   - task: PublishPipelineArtifact@0
     inputs:
       artifactName: 'arm-gcc.deb'
