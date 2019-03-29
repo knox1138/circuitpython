@@ -3,6 +3,11 @@
 # Add steps that publish test results, save build artifacts, deploy, and more:
 # https://docs.microsoft.com/azure/devops/pipelines/apps/c-cpp/gcc
 
+# To ask:
+#   * 400+ artifacts we can't explicitly list. Can we use templating like each to do it per board?
+#   * Better way to have deb hosted/cached for install?
+#   * Release pipeline vs GitHub triggered tag?
+
 trigger:
 - azure-pipelines
 
@@ -115,11 +120,11 @@ jobs:
             samd_m0_express_boards2:
                 TRAVIS_BOARDS: 'metro_m0_express sparkfun_redboard_turbo hallowing_m0_express itsybitsy_m0_express'
             samd_m4_boards1:
-                TRAVIS_BOARDS: 'sam32 itsybitsy_m4_express feather_m4_express pyportal mini_sam_m4'
+                TRAVIS_BOARDS: 'itsybitsy_m4_express feather_m4_express pyportal mini_sam_m4'
             samd_m4_boards2:
                 TRAVIS_BOARDS: 'grandcentral_m4_express metro_m4_express trellis_m4_express pybadge'
             nrf_boards:
-                TRAVIS_BOARDS: 'pca10056 pca10059 makerdiary_nrf52840_mdk makerdiary_nrf52840_mdk_usb_dongle particle_boron particle_argon particle_xenon sparkfun_nrf52840_mini feather_nrf52840_express'
+                TRAVIS_BOARDS: 'pca10056 pca10059 makerdiary_nrf52840_mdk makerdiary_nrf52840_mdk_usb_dongle particle_boron particle_argon particle_xenon sparkfun_nrf52840_mini feather_nrf52840_express sam32'
 
     steps:
     - checkout: self
