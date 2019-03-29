@@ -100,7 +100,7 @@ jobs:
       vmImage: 'Ubuntu-16.04'
     dependsOn: Download_ARM_GCC
     strategy:
-        matrix
+        matrix:
             # Nine subjobs that will go in parallel with the test job
             samd_m0_boards1:
                 TRAVIS_BOARDS: 'trinket_m0 pirkey_m0 gemma_m0 sparkfun_lumidrive arduino_zero'
