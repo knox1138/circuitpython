@@ -29,6 +29,8 @@ CIRCUITPY_FULL_BUILD = 0
 SUPEROPT_GC = 0
 SUPEROPT_VM = 0
 
+CIRCUITPY_PIXELBUF = 1
+
 # Include these Python libraries in firmware.
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_SimpleMath
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_NeoPixel

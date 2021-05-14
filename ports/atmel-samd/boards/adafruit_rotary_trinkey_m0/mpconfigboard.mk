@@ -26,6 +26,8 @@ CIRCUITPY_USB_MIDI = 1
 SUPEROPT_GC = 0
 SUPEROPT_VM = 0
 
+CIRCUITPY_PIXELBUF = 1
+
 # Include these Python libraries in firmware.
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_NeoPixel
 FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_HID
