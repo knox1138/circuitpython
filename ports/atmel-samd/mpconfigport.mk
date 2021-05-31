@@ -58,7 +58,7 @@ CIRCUITPY_TOUCHIO_USE_NATIVE ?= 1
 CIRCUITPY_ULAB = 0
 CIRCUITPY_VECTORIO = 0
 
-MICROPY_PY_ASYNC_AWAIT = 0
+MICROPY_PY_ASYNC_AWAIT = 1
 
 # We don't have room for the fonts for terminalio for ja and ko
 # so turn off terminalio, and if it's off and displayio is on,
